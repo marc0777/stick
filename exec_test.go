@@ -53,6 +53,7 @@ func withNodeVisitor(visitFunc func(parse.Node)) testOption {
 }
 
 var tests = []execTest{
+	newExecTest("Unary operator precedence", "{% if not false and false %}T{% else %}F{% endif %}{% if not 1 == 2 %}T{% else %}F{% endif %}{% if not missing is defined %}T{% else %}F{% endif %}{{ -2 + 3 }}", expect("FFT1")),
 	newExecTest("Newline after block and comment tags", "a\n{% if true %}\nb\r\n{% endif %}\r\n{# c #}\nd\n{{ 'e' }}\nf", expect("a\nb\r\nd\ne\nf")),
 	newExecTest("Nested hash literals", "{% set o = {'a': {'b': 1}} %}{{ o.a.b }}{{ {'c': {'d': 2}}.c.d }}", expect("12")),
 	newExecTest("Line breaks inside tags", "{% if a and\nb %}yes{% endif %}{% if c\r\nis defined %}!{% endif %}", expect("yes!"), withContext(map[string]Value{"a": true, "b": true, "c": 1})),

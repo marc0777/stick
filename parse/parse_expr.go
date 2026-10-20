@@ -253,7 +253,7 @@ func (t *Tree) parseInnerExpr() (Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NewUnaryExpr(op.Operator(), expr, tok.Pos), nil
+		return applyUnary(op, expr, tok.Pos), nil
 
 	case tokenParensOpen:
 		inner, err := t.parseExpr()
@@ -430,4 +430,20 @@ func (t *Tree) parseFunc(name *NameExpr) (Expr, error) {
 			return nil, newUnexpectedTokenError(tok, tokenPunctuation, tokenParensClose)
 		}
 	}
+}
+
+// applyUnary binds op tighter than the lower-precedence binary operators and
+// ternaries in e, as PHP Twig does: `not a and b` is `(not a) and b`.
+func applyUnary(op operator, e Expr, pos Pos) Expr {
+	switch x := e.(type) {
+	case *BinaryExpr:
+		if binaryOperators[x.Op].precedence < op.precedence {
+			x.Left = applyUnary(op, x.Left, pos)
+			return x
+		}
+	case *TernaryIfExpr:
+		x.Cond = applyUnary(op, x.Cond, pos)
+		return x
+	}
+	return NewUnaryExpr(op.Operator(), e, pos)
 }
