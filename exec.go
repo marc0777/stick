@@ -1065,20 +1065,11 @@ func (s *state) callMacro(macro macroDef, args ...Value) (Value, error) {
 
 // execute kicks off execution of the given template.
 func execute(name string, out io.Writer, ctx map[string]Value, env *Env) error {
-	if ctx == nil {
-		ctx = make(map[string]Value)
-	}
-	s := newState(name, out, ctx, env)
-	tree, err := s.env.load(name)
+	tree, err := env.load(name)
 	if err != nil {
 		return err
 	}
-	s.blocks = append(s.blocks, tree.Blocks())
-	err = s.walk(tree.Root())
-	if err != nil {
-		return err
-	}
-	return nil
+	return env.ExecuteTree(tree, out, ctx)
 }
 
 // Method load attempts to load and parse the given template.

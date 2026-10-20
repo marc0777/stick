@@ -115,6 +115,16 @@ func (env *Env) ExecuteSafe(tpl string, out io.Writer, ctx map[string]Value) err
 	return err
 }
 
+// ExecuteTree executes an already parsed template, such as one returned by Parse.
+func (env *Env) ExecuteTree(tree *parse.Tree, out io.Writer, ctx map[string]Value) error {
+	if ctx == nil {
+		ctx = make(map[string]Value)
+	}
+	s := newState(tree.Name, out, ctx, env)
+	s.blocks = append(s.blocks, tree.Blocks())
+	return s.walk(tree.Root())
+}
+
 // Parse loads and parses the given template.
 func (env *Env) Parse(name string) (*parse.Tree, error) {
 	return env.load(name)
