@@ -132,6 +132,12 @@ func (l *lexer) nextToken() token {
 
 // tokenize kicks things off.
 func (l *lexer) tokenize() {
+	// Close after an error too, so Parse can drain the lexer.
+	defer func() {
+		if l.mode != modeClosed {
+			close(l.tokens)
+		}
+	}()
 	for l.state = lexData; l.state != nil; {
 		l.state = l.state(l)
 	}

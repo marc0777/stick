@@ -225,6 +225,9 @@ func (t *Tree) Parse() error {
 	for {
 		n, err := t.parse()
 		if err != nil {
+			// Drain the lexer so its goroutine exits instead of blocking forever.
+			for range t.lex.tokens {
+			}
 			return t.enrichError(err)
 		}
 		if n == nil {
