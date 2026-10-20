@@ -188,37 +188,37 @@ func CoerceBool(v Value) bool {
 	case Boolean:
 		return vc.Boolean()
 	case uint:
-		return vc > 0
+		return vc != 0
 	case uint8:
-		return vc > 0
+		return vc != 0
 	case uint16:
-		return vc > 0
+		return vc != 0
 	case uint32:
-		return vc > 0
+		return vc != 0
 	case uint64:
-		return vc > 0
+		return vc != 0
 	case int:
-		return vc > 0
+		return vc != 0
 	case int8:
-		return vc > 0
+		return vc != 0
 	case int16:
-		return vc > 0
+		return vc != 0
 	case int32:
-		return vc > 0
+		return vc != 0
 	case int64:
-		return vc > 0
+		return vc != 0
 	case float32:
-		return vc > 0
+		return vc != 0
 	case float64:
-		return vc > 0
+		return vc != 0
 	case string:
-		return len(vc) > 0
+		return vc != "" && vc != "0"
 	case decimal.Decimal:
-		return vc.GreaterThan(decimal.Zero)
+		return !vc.IsZero()
 	case Stringer:
-		return len(vc.String()) > 0
+		return CoerceBool(vc.String())
 	case Number:
-		return vc.Number() > 0
+		return vc.Number() != 0
 	}
 	// Arrays, slices, and maps are truthy when non-empty, matching PHP-Twig's
 	// "if" semantics for collections (empty array → false; non-empty → true).
