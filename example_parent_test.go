@@ -25,12 +25,8 @@ func ExampleEnv_Execute_parent() {
 	// This is a document.
 	//
 	// Not A title
-	//
 	// Testing parent()
-	//
 	// This is a test
-	//
 	// Another section
-	//
 	// Some extra information.
 }

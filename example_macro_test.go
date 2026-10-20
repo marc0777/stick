@@ -35,14 +35,10 @@ func ExampleEnv_Execute_macro() {
 	}
 	// Output:
 	// Hello
-	//
 	// * item1: something about item1 (0)
-	//
 	// * item2: something about item2 (1)
 	//
 	// Responses
-	//
 	// * please: no, thank you (0)
-	//
 	// * why not: cause (1)
 }

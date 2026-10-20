@@ -26,16 +26,10 @@ func ExampleEnv_Execute_filesystemLoader() {
 	// This is a document.
 	//
 	// Hello
-	//
 	// An introduction to the topic.
-	//
 	// The body of this topic.
-	//
 	// Another section
-	//
 	// Some extra information.
-	//
 	// Still nobody knows.
-	//
 	// Some kind of footer.
 }

@@ -499,6 +499,7 @@ func lexCommentOpen(l *lexer) stateFn {
 		return l.errorf("expected comment close")
 	}
 	l.pos += len(delimCloseComment)
+	l.skipNewline()
 	l.emit(tokenCommentClose)
 
 	return lexData
@@ -522,6 +523,7 @@ func lexTagClose(l *lexer) stateFn {
 		l.pos++
 	}
 	l.pos += len(delimCloseTag)
+	l.skipNewline()
 	l.emit(tokenTagClose)
 
 	return lexData
@@ -552,6 +554,16 @@ func lexPrintClose(l *lexer) stateFn {
 
 func isSpace(str string) bool {
 	return str == " " || str == "\t" || str == "\n" || str == "\r"
+}
+
+// skipNewline consumes one line break after %} or #}, as PHP Twig does.
+func (l *lexer) skipNewline() {
+	switch {
+	case strings.HasPrefix(l.input[l.pos:], "\r\n"):
+		l.pos += 2
+	case strings.HasPrefix(l.input[l.pos:], "\n"), strings.HasPrefix(l.input[l.pos:], "\r"):
+		l.pos++
+	}
 }
 
 func isName(str string) bool {

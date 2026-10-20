@@ -53,6 +53,7 @@ func withNodeVisitor(visitFunc func(parse.Node)) testOption {
 }
 
 var tests = []execTest{
+	newExecTest("Newline after block and comment tags", "a\n{% if true %}\nb\r\n{% endif %}\r\n{# c #}\nd\n{{ 'e' }}\nf", expect("a\nb\r\nd\ne\nf")),
 	newExecTest("Nested hash literals", "{% set o = {'a': {'b': 1}} %}{{ o.a.b }}{{ {'c': {'d': 2}}.c.d }}", expect("12")),
 	newExecTest("Line breaks inside tags", "{% if a and\nb %}yes{% endif %}{% if c\r\nis defined %}!{% endif %}", expect("yes!"), withContext(map[string]Value{"a": true, "b": true, "c": 1})),
 	newExecTest("Hello, World", "Hello, World!", expect("Hello, World!")),
@@ -213,7 +214,7 @@ var tests = []execTest{
 {{ var0 }}
 {{ var2 }}
 {{ var0 }}`,
-		expectContains("Hello, World!\n1\n\n\nHello, World!\n1"),
+		expectContains("Hello, World!\n1\nHello, World!\n1"),
 	),
 	newExecTest(
 		"Set statement invalid expr type",
