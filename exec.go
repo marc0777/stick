@@ -1031,11 +1031,17 @@ func (s *state) evalFilter(exp *parse.FilterExpr) (Value, error) {
 		}
 		args := make([]Value, len(eargs))
 		for i, e := range eargs {
-			v, err := s.evalExpr(e)
-			// |default accepts an undefined value, as in PHP Twig strict mode.
-			if undef := (UndefinedVariableError{}); i == 0 && ftName == "default" && errors.As(err, &undef) {
-				v, err = nil, nil
+			// |default accepts an undefined variable or attribute, as in PHP Twig strict mode.
+			if i == 0 && ftName == "default" {
+				defined, err := s.isDefined(e)
+				if err != nil {
+					return nil, err
+				}
+				if !defined {
+					continue
+				}
 			}
+			v, err := s.evalExpr(e)
 			if err != nil {
 				return nil, err
 			}

@@ -39,16 +39,17 @@ func TestStrict(t *testing.T) {
 		return buf.String(), err
 	}
 	for tpl, want := range map[string]string{
-		"{{ x|default('d') }}":                                                        "d",
+		"{{ x|default('d') }}": "d",
+		"{{ o.a|default('d') }}{{ o.a.b|default('d') }}{{ x.a|default('d') }}":        "ddd",
 		"{% if x is defined %}{{ x }}{% else %}n{% endif %}":                          "n",
 		"{% if false %}{{ x }}{% endif %}ok":                                          "ok",
 		"{% set y = 1 %}{{ y }}{% for i in [2] %}{{ i }}{{ loop.index }}{% endfor %}": "121",
 	} {
-		if out, err := run(tpl, nil); err != nil || out != want {
+		if out, err := run(tpl, map[string]Value{"o": map[string]Value{}}); err != nil || out != want {
 			t.Errorf("%q: got %q, %v; want %q", tpl, out, err, want)
 		}
 	}
-	for _, tpl := range []string{"{{ x }}", "{% if x %}{% endif %}", "{{ x.y }}", "{% if o[k] is defined %}{% endif %}"} {
+	for _, tpl := range []string{"{{ x }}", "{% if x %}{% endif %}", "{{ x.y }}", "{% if o[k] is defined %}{% endif %}", "{{ o.a|default(z) }}"} {
 		_, err := run(tpl, map[string]Value{"o": map[string]Value{}})
 		if undef := (UndefinedVariableError{}); !errors.As(err, &undef) {
 			t.Errorf("%q: got %v, want UndefinedVariableError", tpl, err)
