@@ -53,6 +53,7 @@ func withNodeVisitor(visitFunc func(parse.Node)) testOption {
 }
 
 var tests = []execTest{
+	newExecTest("Nested hash literals", "{% set o = {'a': {'b': 1}} %}{{ o.a.b }}{{ {'c': {'d': 2}}.c.d }}", expect("12")),
 	newExecTest("Line breaks inside tags", "{% if a and\nb %}yes{% endif %}{% if c\r\nis defined %}!{% endif %}", expect("yes!"), withContext(map[string]Value{"a": true, "b": true, "c": 1})),
 	newExecTest("Hello, World", "Hello, World!", expect("Hello, World!")),
 	newExecTest("Hello, Tyler!", "Hello, {{ name }}!", expect("Hello, Tyler!"), withContext(map[string]Value{"name": "Tyler"})),

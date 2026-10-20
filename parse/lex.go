@@ -117,6 +117,7 @@ type lexer struct {
 	mode   mode
 	last   token // The last emitted token
 	parens int   // Number of open parenthesis
+	hashes int   // Number of open hash literals
 }
 
 // nextToken returns the next token emitted by the lexer.
@@ -140,7 +141,7 @@ func (l *lexer) tokenize() {
 func newLexer(input io.Reader) *lexer {
 	// TODO: lexer should use the reader.
 	i, _ := ioutil.ReadAll(input)
-	return &lexer{0, 0, 1, 0, string(i), make(chan token), nil, modeNormal, token{}, 0}
+	return &lexer{0, 0, 1, 0, string(i), make(chan token), nil, modeNormal, token{}, 0, 0}
 }
 
 func (l *lexer) next() (val string) {
@@ -252,8 +253,9 @@ func lexExpression(l *lexer) stateFn {
 		}
 		return lexTagClose
 
-	case strings.HasPrefix(l.input[l.pos:], delimClosePrint),
-		strings.HasPrefix(l.input[l.pos:], delimTrimWhitespace+delimClosePrint):
+	// Inside an open hash, "}}" closes hashes, not the print tag.
+	case l.hashes == 0 && (strings.HasPrefix(l.input[l.pos:], delimClosePrint) ||
+		strings.HasPrefix(l.input[l.pos:], delimTrimWhitespace+delimClosePrint)):
 		if l.pos > l.start {
 			return l.errorf("pos > start, previous token not emitted?")
 		}
@@ -427,6 +429,7 @@ func lexOpenParens(l *lexer) stateFn {
 
 	case str == "{":
 		l.emit(tokenHashOpen)
+		l.hashes++
 
 	default:
 		return l.errorf("unknown parenthesis")
@@ -448,6 +451,7 @@ func lexCloseParens(l *lexer) stateFn {
 			return nil
 		}
 		l.emit(tokenHashClose)
+		l.hashes--
 
 	default:
 		return l.errorf("invalid parenthesis")
