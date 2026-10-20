@@ -38,6 +38,7 @@ type Env struct {
 	Filters   map[string]Filter   // User-defined filters.
 	Tests     map[string]Test     // User-defined tests.
 	Visitors  []parse.NodeVisitor // User-defined node visitors.
+	Strict    bool                // Reading an undefined name fails with UndefinedVariableError.
 }
 
 // An Extension is used to group related functions, filters, visitors, etc.

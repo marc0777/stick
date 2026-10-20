@@ -660,19 +660,22 @@ func (s *state) walkFromNode(node *parse.FromNode) error {
 //     treated as undefined. This mirrors PHP Twig's practice of treating
 //     non-variable expressions as always defined while gracefully handling
 //     evaluation-time errors.
-func (s *state) isDefined(e parse.Expr) bool {
+//
+// Errors evaluating an attribute key or argument are returned, as PHP Twig
+// evaluates those normally; in strict mode an undefined key variable fails.
+func (s *state) isDefined(e parse.Expr) (bool, error) {
 	switch x := e.(type) {
 	case *parse.NameExpr:
 		_, ok := s.scope.Get(x.Name)
-		return ok
+		return ok, nil
 	case *parse.GetAttrExpr:
 		cont, err := s.evalExpr(x.Cont)
 		if err != nil || cont == nil {
-			return false
+			return false, nil
 		}
 		attr, err := s.evalExpr(x.Attr)
 		if err != nil {
-			return false
+			return false, err
 		}
 		var args []Value
 		if len(x.Args) > 0 {
@@ -680,16 +683,16 @@ func (s *state) isDefined(e parse.Expr) bool {
 			for i, a := range x.Args {
 				v, err := s.evalExpr(a)
 				if err != nil {
-					return false
+					return false, err
 				}
 				args[i] = v
 			}
 		}
 		_, err = GetAttr(cont, attr, args...)
-		return err == nil
+		return err == nil, nil
 	default:
 		_, err := s.evalExpr(e)
-		return err == nil
+		return err == nil, nil
 	}
 }
 
@@ -707,7 +710,7 @@ func (s *state) evalExpr(exp parse.Expr) (v Value, e error) {
 		if val, ok := s.scope.Get(exp.Name); ok {
 			v = val
 		} else {
-			e = errors.New("undefined variable \"" + exp.Name + "\"")
+			e = UndefinedVariableError{exp.Name}
 		}
 	case *parse.NumberExpr:
 		num, err := strconv.ParseFloat(exp.Value, 64)
@@ -741,7 +744,10 @@ func (s *state) evalExpr(exp parse.Expr) (v Value, e error) {
 		// still reports `x is defined` as true.
 		if exp.Op == parse.OpBinaryIs || exp.Op == parse.OpBinaryIsNot {
 			if te, ok := exp.Right.(*parse.TestExpr); ok && te.Name == "defined" {
-				defined := s.isDefined(exp.Left)
+				defined, err := s.isDefined(exp.Left)
+				if err != nil {
+					return nil, err
+				}
 				if exp.Op == parse.OpBinaryIsNot {
 					defined = !defined
 				}
@@ -935,8 +941,17 @@ func (s *state) evalExpr(exp parse.Expr) (v Value, e error) {
 		return nil, fmt.Errorf("unable to evaluate unsupported Expr type: %T (bug?)", exp)
 	}
 
+	// Outside strict mode, undefined names evaluate to nil.
+	if e != nil && s.env.Strict {
+		return nil, e
+	}
 	return v, nil
 }
+
+// UndefinedVariableError is returned in strict mode when a template reads an undefined name.
+type UndefinedVariableError struct{ Name string }
+
+func (e UndefinedVariableError) Error() string { return `undefined variable "` + e.Name + `"` }
 
 func (s *state) evalFunction(exp *parse.FuncExpr) (Value, error) {
 	fnName := exp.Name
@@ -1017,6 +1032,10 @@ func (s *state) evalFilter(exp *parse.FilterExpr) (Value, error) {
 		args := make([]Value, len(eargs))
 		for i, e := range eargs {
 			v, err := s.evalExpr(e)
+			// |default accepts an undefined value, as in PHP Twig strict mode.
+			if undef := (UndefinedVariableError{}); i == 0 && ftName == "default" && errors.As(err, &undef) {
+				v, err = nil, nil
+			}
 			if err != nil {
 				return nil, err
 			}
