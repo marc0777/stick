@@ -303,7 +303,8 @@ func (l *lexer) tryLexOperator() bool {
 		// we avoid matching "include" or functions like "is_currently_on"
 		// For such operators to be valid, they need to have a space after.
 		lenOp := len(op)
-		if (l.pos+lenOp+1) <= len(l.input) && l.input[l.pos+lenOp:l.pos+lenOp+1] != " " {
+		// Any whitespace, not just " ", may follow the operator.
+		if (l.pos+lenOp+1) <= len(l.input) && !isSpace(l.input[l.pos+lenOp:l.pos+lenOp+1]) {
 			return false
 		}
 	} else if op == delimTrimWhitespace {
@@ -546,7 +547,7 @@ func lexPrintClose(l *lexer) stateFn {
 }
 
 func isSpace(str string) bool {
-	return str == " " || str == "\t" || str == "\n"
+	return str == " " || str == "\t" || str == "\n" || str == "\r"
 }
 
 func isName(str string) bool {
