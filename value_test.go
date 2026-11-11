@@ -45,6 +45,19 @@ func TestValue(t *testing.T) {
 		float64(3.14): "3.14",
 		float32(3.14): "3.14",
 
+		float64(999999):          "999999",
+		float64(1234567):         "1234567",
+		float64(12345678901):     "12345678901",
+		float64(-4000000):        "-4000000",
+		float64(1234567.5):       "1234567.5",
+		0.30000000000000004:      "0.3",
+		float64(0.00001):         "1.0E-5",
+		float64(1e20):            "1.0E+20",
+		float64(1.5e300):         "1.5E+300",
+		float64(123456789.12345): "123456789.12345",
+		math.Inf(1):              "INF",
+		math.Inf(-1):             "-INF",
+
 		decimal.NewFromFloat(3.1415): "3.1415",
 	}
 	for val, expected := range stringTests {

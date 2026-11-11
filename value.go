@@ -2,6 +2,7 @@ package stick
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -299,10 +300,15 @@ func CoerceString(v Value) string {
 		return vc
 	case Stringer:
 		return vc.String()
-	case float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+	case float64:
+		return formatFloat(vc)
+	case float32:
+		f, _ := strconv.ParseFloat(strconv.FormatFloat(float64(vc), 'g', -1, 32), 64)
+		return formatFloat(f)
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("%v", vc)
 	case Number:
-		return fmt.Sprintf("%v", vc.Number())
+		return formatFloat(vc.Number())
 	case Boolean:
 		if vc.Boolean() == true {
 			return "1" // Twig compatibility (aka PHP compatibility)
@@ -314,6 +320,29 @@ func CoerceString(v Value) string {
 
 	}
 	return ""
+}
+
+// formatFloat prints f like PHP echo (precision 14), but whole numbers up to 2^53 in full,
+// as PHP-Twig prints the ints json_decode would give.
+func formatFloat(f float64) string {
+	switch {
+	case math.IsNaN(f):
+		return "NAN"
+	case math.IsInf(f, 1):
+		return "INF"
+	case math.IsInf(f, -1):
+		return "-INF"
+	case f == math.Trunc(f) && math.Abs(f) < 1<<53:
+		return strconv.FormatFloat(f, 'f', -1, 64)
+	}
+	mant, exp, ok := strings.Cut(strconv.FormatFloat(f, 'G', 14, 64), "E")
+	if !ok {
+		return mant
+	}
+	if !strings.Contains(mant, ".") {
+		mant += ".0"
+	}
+	return mant + "E" + exp[:1] + strings.TrimLeft(exp[1:], "0")
 }
 
 // GetAttr attempts to access the given value and return the specified attribute.
